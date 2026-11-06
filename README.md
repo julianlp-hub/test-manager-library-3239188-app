@@ -1,50 +1,60 @@
 # test-manager-library-3239188-app
 
-> **Prueba técnica · Ficha ADSO 3239188**
-> Horario: **jueves 5 de noviembre de 2026, de 7:00 p. m. a 11:00 p. m.** (hora Colombia). Entrega a las **11:00 p. m.**
+Frontend de *Manager Library* en **React**. Consume la API Laravel del repo `api`
+respetando `api-contract.md` del spec. Este repositorio entrega el **diseño del
+frontend** guiado por el spec (SDD): pantallas, rutas, roles y consumo de la API.
 
-Este repositorio es el **frontend** de *Manager Library*, en **React**. **Empieza vacío a propósito**: se construye en el fork de cada aprendiz.
+## Stack
 
-## Instrucciones
-
-Cada aprendiz debe **crear el fork** de los seis repositorios del proyecto y **resolver el proyecto
-con el spec planteado**.
-
-1. Hacer fork, a su cuenta de GitHub, de cada repositorio de la tabla del final.
-2. Leer el spec en [`test-manager-library-3239188-docs`](https://github.com/code-sena/test-manager-library-3239188-docs).
-   Se entrega en dos versiones: `spec-python/` y `spec-.net/`.
-3. Desarrollar en los forks.
-
-## El reto se desarrolla con React y PHP (Laravel)
-
-El spec está escrito para Python y para .NET, pero el reto **no** se hace en esos lenguajes:
-
-| Capa | Tecnología del reto |
+| Elemento | Decisión |
 |---|---|
-| Frontend | React |
-| Backend | PHP con Laravel |
+| Framework | React 18 + Vite |
+| Rutas | React Router |
+| Peticiones | `fetch` envuelto en un cliente único (`apiClient`) |
+| Estado de sesión | Contexto de React; token en memoria (y `sessionStorage` para recargar) |
+| Estilos | CSS simple, sin librería de UI |
+| Variable de entorno | `VITE_API_URL` (ej. `http://localhost:8000/api/v1`) |
 
-Lo que el spec define sobre el negocio —historias, criterios de aceptación, reglas, contrato de la
-API, modelo de datos— se respeta. Lo que define sobre la tecnología se traduce a React y Laravel.
+## Rutas del frontend
 
-## La prueba no consiste en escribir el código
+| Ruta | Pantalla | Roles |
+|---|---|---|
+| /login | Inicio de sesión | público |
+| /books | Catálogo y búsqueda | admin, librarian |
+| /books/new, /books/:id/edit | Formulario de libro | admin |
+| /members | Socios | admin, librarian |
+| /loans/new | Prestar | admin, librarian |
+| /loans | Listado de préstamos y devolución | admin, librarian |
+| /overdue | Libros vencidos | admin, librarian |
+| /reports | Más prestados | admin |
+| /users/new | Crear bibliotecario | admin |
 
-El propósito principal es ver la **capacidad de desempeño con SDD** (*Spec-Driven Development*,
-desarrollo guiado por especificación): cómo se lee, se interpreta y se aplica una especificación
-para llevarla a un stack distinto. El código es el medio, no el fin.
+El detalle de cada pantalla está en [`docs/pantallas.md`](docs/pantallas.md).
 
-## Entrega
+## Reglas del frontend que vienen del spec
 
-Cuenta lo que quede **subido a los forks antes de las 11:00 p. m.** Lo que llegue después no se revisa.
-No hay prórroga: suban avances parciales con commits pequeños durante la prueba.
+- **Sesión:** token JWT de 8 horas. Si la API responde 401, se cierra la sesión y se vuelve a `/login`.
+- **Roles:** el menú oculta lo que el rol no puede usar, pero la autoridad es la API (403).
+- **Errores:** la API siempre responde `{ code, message, details }`. El cliente muestra
+  `message` (ya viene en español) y marca los campos de `details`.
+- **Portadas:** `GET /books/{id}/cover` exige token, así que no sirve un `<img src>` directo;
+  se pide con `fetch` y se muestra con `URL.createObjectURL`. Si responde 404, se pinta un marcador.
+- **Fechas:** la API entrega UTC con `Z`; el frontend las formatea a hora local solo al mostrarlas.
+- **Datos personales:** el reporte no muestra socios ni bibliotecarios (CA-10.3).
 
-## Los seis repositorios
+## Cómo se ejecutaría
 
-| Repositorio | Qué va ahí |
-|---|---|
-| [`test-manager-library-3239188-docs`](https://github.com/code-sena/test-manager-library-3239188-docs) | El spec: `spec-python/` y `spec-.net/` |
-| [`test-manager-library-3239188-api`](https://github.com/code-sena/test-manager-library-3239188-api) | Backend en PHP (Laravel) |
-| [`test-manager-library-3239188-app`](https://github.com/code-sena/test-manager-library-3239188-app) | Frontend en React |
-| [`test-manager-library-3239188-page`](https://github.com/code-sena/test-manager-library-3239188-page) | Sitio público estático de presentación |
-| [`test-manager-library-3239188-infra`](https://github.com/code-sena/test-manager-library-3239188-infra) | Contenedores, red, volúmenes y motor de base de datos vacío |
-| [`test-manager-library-3239188-tool`](https://github.com/code-sena/test-manager-library-3239188-tool) | Utilidades: sembrador de datos de demostración |
+```
+npm install
+cp .env.example .env     # define VITE_API_URL
+npm run dev
+```
+
+## Evidencia (T-22)
+
+Recorrido manual de punta a punta: login → buscar libro → crear socio → prestar →
+ver vencidos → devolver → reporte (como admin).
+
+## Estado
+
+Diseño documentado. Ver `docs/pantallas.md`.
